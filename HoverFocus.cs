@@ -9,7 +9,15 @@ public class HoverFocusWindow : Form
     static extern bool SetForegroundWindow(IntPtr hWnd);
 
     [DllImport("user32.dll")]
+    static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+    [DllImport("user32.dll")]
+    static extern bool IsIconic(IntPtr hWnd);
+
+    [DllImport("user32.dll")]
     static extern IntPtr GetForegroundWindow();
+
+    const int SW_RESTORE = 9;
 
     [DllImport("user32.dll")]
     static extern int GetWindowText(IntPtr hWnd, System.Text.StringBuilder text, int count);
@@ -106,6 +114,8 @@ public class HoverFocusWindow : Form
     {
         if (targetWindow != IntPtr.Zero && !capturing)
         {
+            if (IsIconic(targetWindow))
+                ShowWindow(targetWindow, SW_RESTORE);
             SetForegroundWindow(targetWindow);
         }
     }
