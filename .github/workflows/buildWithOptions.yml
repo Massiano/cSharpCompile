@@ -1,0 +1,57 @@
+name: Build .NET Project
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Path to .csproj file (e.g. src/MyApp/MyApp.csproj)'
+        required: true
+        type: string
+      self_contained:
+        description: 'Self-contained exe (larger, no runtime needed)'
+        required: false
+        type: boolean
+        default: true
+      runtime:
+        description: 'Target runtime'
+        required: false
+        type: choice
+        default: 'win-x64'
+        options:
+          - win-x64
+          - win-x86
+          - win-arm64
+          - linux-x64
+          - osx-x64
+          - osx-arm64
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Get project name
+        id: projname
+        shell: bash
+        run: |
+          basename="${{ inputs.project }}"
+          name="${basename%.csproj}"
+          name="${name##*/}"
+          echo "name=$name" >> $GITHUB_OUTPUT
+
+      - name: Publish
+        run: |
+          dotnet publish "${{ inputs.project }}" -c Release -r ${{ inputs.runtime }} --self-contained ${{ inputs.self_contained }} -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o publish
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.projname.outputs.name }}-${{ inputs.runtime }}
+          path: publish/
